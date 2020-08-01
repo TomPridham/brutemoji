@@ -13,3 +13,4 @@ license = "MIT"
 [dependencies]
 image = {version="0.23.8", default-features = false, features = ["gif", "jpeg", "png", "webp"]}
 rand = "0.7.3"
+img_hash = "3.1.0"
