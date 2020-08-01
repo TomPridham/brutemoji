@@ -8,7 +8,12 @@ use std::path::Path;
 
 mod emoji;
 
-pub fn generate_image(image_buffer: &[u8]) -> Result<Vec<u8>, ImageError> {
+pub fn generate_image(
+    image_buffer: &[u8],
+    iterations: u64,
+    save_progress: bool,
+    path: &Path,
+) -> Result<Vec<u8>, ImageError> {
     let orig = load_from_memory(image_buffer)?;
     let (width, height) = orig.dimensions();
     let mut new_img = RgbaImage::new(width, height);
@@ -17,7 +22,7 @@ pub fn generate_image(image_buffer: &[u8]) -> Result<Vec<u8>, ImageError> {
     let new_hash = hasher.hash_image(&new_img);
     let mut dist = orig_hash.dist(&new_hash);
 
-    for _ in 0..10 {
+    for _ in 0..iterations {
         let e = emoji::get_emoji();
         let w: u32 = random::<u32>() % width;
         let h: u32 = random::<u32>() % height;
@@ -29,9 +34,16 @@ pub fn generate_image(image_buffer: &[u8]) -> Result<Vec<u8>, ImageError> {
         if dist > temp_dist {
             new_img = temp_img;
             dist = temp_dist;
+            if save_progress {
+                let s = new_img.save(path);
+                match s {
+                    Ok(_) => println!("ok"),
+                    Err(e) => println!("{}", e),
+                };
+            }
         }
     }
-    let s = new_img.save(Path::new("./g.png"));
+    let s = new_img.save(path);
     match s {
         Ok(_) => println!("ok"),
         Err(e) => println!("{}", e),
@@ -51,8 +63,9 @@ mod tests {
         let img = open(Path::new("./assets/georgia.jpg")).unwrap();
         let mut output = Vec::new();
         JPEGEncoder::new(&mut output).encode_image(&img).unwrap();
+        let path = Path::new("./g.png");
 
-        let new_img = generate_image(&output);
+        let new_img = generate_image(&output, 10, true, path);
         match new_img {
             Ok(_) => println!("OK"),
             Err(e) => println!("{}", e),
