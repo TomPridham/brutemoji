@@ -2,7 +2,7 @@ use image::{
     imageops::overlay, load_from_memory, load_from_memory_with_format, GenericImageView,
     ImageError, ImageFormat, RgbaImage,
 };
-use img_hash::HasherConfig;
+use img_hash::{HashAlg, HasherConfig};
 use rand::random;
 use std::path::Path;
 
@@ -17,7 +17,7 @@ pub fn generate_image(
     let orig = load_from_memory(image_buffer)?;
     let (width, height) = orig.dimensions();
     let mut new_img = RgbaImage::new(width, height);
-    let hasher = HasherConfig::new().to_hasher();
+    let hasher = HasherConfig::new().hash_alg(HashAlg::Blockhash).to_hasher();
     let orig_hash = hasher.hash_image(&orig);
     let new_hash = hasher.hash_image(&new_img);
     let mut dist = orig_hash.dist(&new_hash);
@@ -59,13 +59,16 @@ mod tests {
         use crate::generate_image;
         use image::{jpeg::JPEGEncoder, open};
         use std::path::Path;
+        use std::time::Instant;
+        let now = Instant::now();
 
         let img = open(Path::new("./assets/georgia.jpg")).unwrap();
         let mut output = Vec::new();
         JPEGEncoder::new(&mut output).encode_image(&img).unwrap();
         let path = Path::new("./g.png");
 
-        let new_img = generate_image(&output, 10, true, path);
+        let new_img = generate_image(&output, 100, true, path);
+        println!("{}", now.elapsed().as_secs());
         match new_img {
             Ok(_) => println!("OK"),
             Err(e) => println!("{}", e),
