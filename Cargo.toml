@@ -1,12 +1,15 @@
+
 [package]
 name = "brutemoji"
 version = "0.1.0"
 authors = ["Tom Pridham <pridham.tom@gmail.com>"]
 edition = "2018"
-license = "MIT"
 description = "Recreate pictures with emoji by bruteforce"
-keywords = ["emoji", "picture", "image", "bruteforce", "idiotic"]
 homepage = "https://tompridham.me"
 readme = "README.md"
+keywords = ["emoji", "picture", "image", "bruteforce", "idiotic"]
+license = "MIT"
 
 [dependencies]
+image = {version="0.23.8", default-features = false, features = ["gif", "jpeg", "png", "webp"]}
+rand = "0.7.3"
