@@ -26,6 +26,7 @@ pub fn generate_image(
     save_progress: bool,
     path: &Path,
 ) -> Result<Vec<u8>, ImageError> {
+    let mut emoji_cache = emoji::EmojiCache::new();
     let orig = load_from_memory(image_buffer)?;
     let (width, height) = orig.dimensions();
     let orig = orig.to_bytes();
@@ -33,12 +34,11 @@ pub fn generate_image(
     let mut dist = sums_chunked(&orig, &new_img);
 
     for _ in 0..iterations {
-        let e = emoji::get_emoji();
+        let e = &emoji_cache.get_emoji();
         let w: u32 = random::<u32>() % width;
         let h: u32 = random::<u32>() % height;
-        let e = load_from_memory_with_format(e, ImageFormat::Png)?;
         let mut temp_img = new_img.clone();
-        overlay(&mut temp_img, &e, w, h);
+        overlay(&mut temp_img, &**e, w, h);
         let temp_dist = sums_chunked(&orig, &temp_img);
         if dist > temp_dist {
             new_img = temp_img;
