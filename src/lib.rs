@@ -2,11 +2,23 @@ use image::{
     imageops::overlay, load_from_memory, load_from_memory_with_format, GenericImageView,
     ImageError, ImageFormat, RgbaImage,
 };
-use img_hash::{HashAlg, HasherConfig};
 use rand::random;
 use std::path::Path;
 
 mod emoji;
+
+fn sums_chunked(samples_a: &[u8], samples_b: &[u8]) -> (i32, i32, i32) {
+    samples_a
+        .chunks_exact(3)
+        .zip(samples_b.chunks_exact(3))
+        .fold((0, 0, 0), |(r, g, b), (p_a, p_b)| {
+            (
+                r + (p_a[0] as i32 - p_b[0] as i32),
+                g + (p_a[1] as i32 - p_b[1] as i32),
+                b + (p_a[2] as i32 - p_b[2] as i32),
+            )
+        })
+}
 
 pub fn generate_image(
     image_buffer: &[u8],
@@ -16,11 +28,9 @@ pub fn generate_image(
 ) -> Result<Vec<u8>, ImageError> {
     let orig = load_from_memory(image_buffer)?;
     let (width, height) = orig.dimensions();
+    let orig = orig.to_bytes();
     let mut new_img = RgbaImage::new(width, height);
-    let hasher = HasherConfig::new().hash_alg(HashAlg::Blockhash).to_hasher();
-    let orig_hash = hasher.hash_image(&orig);
-    let new_hash = hasher.hash_image(&new_img);
-    let mut dist = orig_hash.dist(&new_hash);
+    let mut dist = sums_chunked(&orig, &new_img);
 
     for _ in 0..iterations {
         let e = emoji::get_emoji();
@@ -29,8 +39,7 @@ pub fn generate_image(
         let e = load_from_memory_with_format(e, ImageFormat::Png)?;
         let mut temp_img = new_img.clone();
         overlay(&mut temp_img, &e, w, h);
-        let temp_hash = hasher.hash_image(&temp_img);
-        let temp_dist = orig_hash.dist(&temp_hash);
+        let temp_dist = sums_chunked(&orig, &temp_img);
         if dist > temp_dist {
             new_img = temp_img;
             dist = temp_dist;
