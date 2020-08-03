@@ -1,7 +1,4 @@
-use image::{
-    imageops::overlay, load_from_memory, load_from_memory_with_format, GenericImageView,
-    ImageError, ImageFormat, RgbaImage,
-};
+use image::{imageops::overlay, load_from_memory, ImageError, RgbaImage};
 use rand::random;
 use std::path::Path;
 
@@ -27,38 +24,29 @@ pub fn generate_image(
     path: &Path,
 ) -> Result<Vec<u8>, ImageError> {
     let mut emoji_cache = emoji::EmojiCache::new();
-    let orig = load_from_memory(image_buffer)?;
+    let orig = load_from_memory(image_buffer)?.into_rgba();
     let (width, height) = orig.dimensions();
-    let orig = orig.to_bytes();
     let mut new_img = RgbaImage::new(width, height);
     let mut dist = sums_chunked(&orig, &new_img);
 
     for _ in 0..iterations {
-        let e = &emoji_cache.get_emoji();
-        let w: u32 = random::<u32>() % width;
-        let h: u32 = random::<u32>() % height;
+        let e = emoji_cache.get_emoji();
+        let x: u32 = random::<u32>() % width;
+        let y: u32 = random::<u32>() % height;
         let mut temp_img = new_img.clone();
-        overlay(&mut temp_img, &**e, w, h);
+        overlay(&mut temp_img, e, x, y);
         let temp_dist = sums_chunked(&orig, &temp_img);
         if dist > temp_dist {
             new_img = temp_img;
             dist = temp_dist;
             if save_progress {
-                let s = new_img.save(path);
-                match s {
-                    Ok(_) => println!("ok"),
-                    Err(e) => println!("{}", e),
-                };
+                new_img.save(path)?;
             }
         }
     }
-    let s = new_img.save(path);
-    match s {
-        Ok(_) => println!("ok"),
-        Err(e) => println!("{}", e),
-    };
+    new_img.save(path)?;
 
-    Ok(vec![0])
+    Ok(new_img.to_vec())
 }
 
 #[cfg(test)]
@@ -76,7 +64,7 @@ mod tests {
         JPEGEncoder::new(&mut output).encode_image(&img).unwrap();
         let path = Path::new("./g.png");
 
-        let new_img = generate_image(&output, 100, true, path);
+        let new_img = generate_image(&output, 10000, true, path);
         println!("{}", now.elapsed().as_secs());
         match new_img {
             Ok(_) => println!("OK"),
