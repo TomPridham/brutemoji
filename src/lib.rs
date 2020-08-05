@@ -10,9 +10,9 @@ fn sums_chunked(samples_a: &[u8], samples_b: &[u8]) -> (i32, i32, i32) {
         .zip(samples_b.chunks_exact(3))
         .fold((0, 0, 0), |(r, g, b), (p_a, p_b)| {
             (
-                r + (p_a[0] as i32 - p_b[0] as i32),
-                g + (p_a[1] as i32 - p_b[1] as i32),
-                b + (p_a[2] as i32 - p_b[2] as i32),
+                r + (p_a[0] as i32 - p_b[0] as i32).abs(),
+                g + (p_a[1] as i32 - p_b[1] as i32).abs(),
+                b + (p_a[2] as i32 - p_b[2] as i32).abs(),
             )
         })
 }
@@ -64,7 +64,7 @@ mod tests {
         JPEGEncoder::new(&mut output).encode_image(&img).unwrap();
         let path = Path::new("./g.png");
 
-        let new_img = generate_image(&output, 10000, true, path);
+        let new_img = generate_image(&output, 30_000, false, path);
         println!("{}", now.elapsed().as_secs());
         match new_img {
             Ok(_) => println!("OK"),
