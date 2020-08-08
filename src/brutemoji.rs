@@ -8,7 +8,7 @@ use std::time::Instant;
 
 mod emoji;
 
-fn measure_dist(rng: &mut ThreadRng, samples_a: &[u8], samples_b: &[u8]) -> i32 {
+fn measure_dist(rng: &mut ThreadRng, samples_a: &Vec<u8>, samples_b: Vec<u8>) -> i32 {
     //let mut rng = thread_rng();
     let sample_length = samples_a.len();
     let v1 = (1..sample_length).choose_multiple(rng, sample_length/10);
@@ -41,23 +41,27 @@ pub fn generate_image(
     let mut emoji_cache = emoji::EmojiCache::new();
     let orig = load_from_memory(image_buffer)?.into_rgba();
     let (width, height) = orig.dimensions();
+    // let orig_vec = orig.into_vec();
     let canvas_size = width * height;
     let mut rng = thread_rng();
     let mut new_img = RgbaImage::new(width, height);
     println!("image is {} by {} pixels", width, height);
+    // let mut dist = measure_dist(&mut rng, &orig_vec,  new_img.clone().into_vec());
     let mut dist = sums_chunked(&orig, &new_img);
     println!("dist is {}", dist);
 
-    for _  in 0..canvas_size/40 {
+    let mut placed_count = 0;
+    for _  in 0..canvas_size/20 {
         let e = emoji_cache.get_emoji();
         let x: u32 = (1..width).choose(&mut rng).unwrap();
         let y: u32 = (1..height).choose(&mut rng).unwrap();
         overlay(&mut new_img, e, x, y);
+        placed_count= placed_count+1;
     }
 
     dist = sums_chunked(&orig, &new_img);
+    // ist = measure_dist(&mut rng, &orig_vec, new_img.clone().into_vec());
     println!("dist is {}", dist);
-    let mut placed_count = 0;
     
     for index in 0..iterations {
         let e = emoji_cache.get_emoji();
@@ -66,6 +70,7 @@ pub fn generate_image(
         let mut temp_img = new_img.clone();
         overlay(&mut temp_img, e, x, y);
         let temp_dist = sums_chunked(&orig, &temp_img);
+        // let temp_dist = measure_dist(&mut rng, &orig_vec, temp_img.clone().into_vec());
         if dist > temp_dist {
             new_img = temp_img;
             dist = temp_dist;
