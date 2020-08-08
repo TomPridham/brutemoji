@@ -13,7 +13,9 @@ fn main() {
         let path = Path::new("./g.png");
 
         let new_img = brutemoji::generate_image(&output, 100, false, path);
-        println!("Took {} seconds", now.elapsed().as_secs());
+        println!("Took {}.{} seconds",
+            now.elapsed().as_secs(),
+            now.elapsed().subsec_millis());
         match new_img {
             Ok(_) => println!("OK"),
             Err(e) => println!("{}", e),
