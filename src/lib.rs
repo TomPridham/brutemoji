@@ -8,8 +8,7 @@ mod emoji;
 
 fn measure_dist_chunks(samples_a: &[u8], samples_b: &[u8]) -> i64 {
     samples_a
-        .chunks_exact(1)
-        .zip(samples_b.chunks_exact(1))
+        .zip(samples_b.iter())
         .fold(0, |rgba, (p_a, p_b)| {
                 rgba + (p_a[0] as i64 - p_b[0] as i64).abs()
         })
@@ -36,9 +35,7 @@ pub fn generate_image(
     let canvas_size = width * height;
     let mut rng = thread_rng();
     let mut new_img = DynamicImage::new_rgb16(width, height);
-    println!("image is {} by {} pixels", width, height);
     let mut dist = measure_dist_chunks(&image_buffer_rgb, &new_img.to_rgb());
-    println!("dist is {}", dist);
 
     let mut placed_count = 0;
     for _  in 0..canvas_size/20 {
@@ -50,7 +47,6 @@ pub fn generate_image(
     }
 
     dist = measure_dist_chunks(&image_buffer_rgb, &new_img.to_rgb());
-    println!("dist is {}", dist);
     
     for index in 0..iterations {
         let e = emoji_cache.get_emoji();
