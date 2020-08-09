@@ -11,7 +11,7 @@ fn main() {
         let config = Config::new(&args);
         let orig_path = format!("./assets/{}", config.filename);
         let img = open(Path::new(&orig_path)).unwrap();
-        let name = config.filename.split(".").collect::<Vec<&str>>()[1];
+        let name = config.filename.split(".").collect::<Vec<&str>>()[0];
         let new_path = String::from(format!("./output/{}_emoji.png", &name));
         let path = Path::new(&new_path);
 
