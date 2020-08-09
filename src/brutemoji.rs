@@ -1,6 +1,4 @@
 use image::{imageops::overlay, ImageError, DynamicImage};
-extern crate rand;
-use rand::thread_rng;
 use std::path::Path;
 use rand::prelude::*;
 use std::time::Instant;
