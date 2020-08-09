@@ -20,7 +20,7 @@ impl EmojiCache {
         self.get_emoji_by_index(index)
     }
 
-    pub fn get_emoji_by_index(&mut self, index: usize) -> &DynamicImage {
+    fn get_emoji_by_index(&mut self, index: usize) -> &DynamicImage {
         self.emoji_cache.entry(index).or_insert_with(|| {
             let e = unsafe { EMOJIS.get_unchecked(index) };
             load_from_memory_with_format(e, ImageFormat::Png).unwrap()
@@ -3390,4 +3390,3 @@ const EMOJIS: [&[u8]; 3360] = [
     include_bytes!("../assets/emoji_pngs_16/ae.png"),
     include_bytes!("../assets/emoji_pngs_16/e50a.png"),
 ];
-
