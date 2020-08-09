@@ -2,7 +2,6 @@ use image::{imageops::overlay, ImageError, DynamicImage};
 extern crate rand;
 use rand::thread_rng;
 use std::path::Path;
-// use rand::seq::SliceRandom;
 use rand::prelude::*;
 use std::time::Instant;
 
@@ -21,7 +20,7 @@ fn measure_dist(rng: &mut ThreadRng, samples_a: &Vec<u8>, samples_b: Vec<u8>) ->
     return diff;
 }
 
-fn sums_chunked(samples_a: &[u8], samples_b: &[u8]) -> i32 {
+fn measure_dist_chunks(samples_a: &[u8], samples_b: &[u8]) -> i32 {
     samples_a
         .chunks_exact(1)
         .zip(samples_b.chunks_exact(1))
@@ -30,15 +29,10 @@ fn sums_chunked(samples_a: &[u8], samples_b: &[u8]) -> i32 {
         })
 }
 
-fn sums_chunked_targeted(samples_a: &DynamicImage, samples_b: &DynamicImage, x: u32, y: u32 ) -> i32 {
-    let sub_img = samples_a.crop_imm(x-8,y-8,32,32).to_rgb();
-    let sub_img_b = samples_b.crop_imm(x-8,y-8,32,32).to_rgb();
-   sub_img
-        .chunks_exact(1)
-        .zip(sub_img_b.chunks_exact(1))
-        .fold(0, |rgba, (p_a, p_b)| {
-                rgba + (p_a[0] as i32 - p_b[0] as i32).abs()
-        })
+fn subimage_compare(image_a: &DynamicImage, image_b: &DynamicImage, x: u32, y: u32 ) -> i32 {
+    let sub_image_a = image_a.crop_imm(x-8,y-8,32,32).to_rgb();
+    let sub_image_b = image_b.crop_imm(x-8,y-8,32,32).to_rgb();
+    measure_dist_chunks(&sub_image_a, &sub_image_b)
 }
 
 pub fn generate_image(
@@ -60,7 +54,7 @@ pub fn generate_image(
     let mut new_img = DynamicImage::new_rgb16(width, height);
     println!("image is {} by {} pixels", width, height);
     // let mut dist = measure_dist(&mut rng, &orig_vec,  new_img.clone().into_vec());
-    let mut dist = sums_chunked(&image_buffer_rgb, &new_img.to_rgb());
+    let mut dist = measure_dist_chunks(&image_buffer_rgb, &new_img.to_rgb());
     println!("dist is {}", dist);
 
     let mut placed_count = 0;
@@ -72,7 +66,7 @@ pub fn generate_image(
         placed_count= placed_count+1;
     }
 
-    dist = sums_chunked(&image_buffer_rgb, &new_img.to_rgb());
+    dist = measure_dist_chunks(&image_buffer_rgb, &new_img.to_rgb());
     // ist = measure_dist(&mut rng, &orig_vec, new_img.clone().into_vec());
     println!("dist is {}", dist);
     
@@ -81,9 +75,9 @@ pub fn generate_image(
         let x: u32 = (1..width).choose(&mut rng).unwrap();
         let y: u32 = (1..height).choose(&mut rng).unwrap();
         let mut temp_img = new_img.clone();
-        let temp_dist1 = sums_chunked_targeted(&image_buffer, &temp_img, x, y);
+        let temp_dist1 = subimage_compare(&image_buffer, &temp_img, x, y);
         overlay(&mut temp_img, e, x, y);
-        let temp_dist2 = sums_chunked_targeted(&image_buffer, &temp_img, x, y);
+        let temp_dist2 = subimage_compare(&image_buffer, &temp_img, x, y);
         // let temp_dist = measure_dist(&mut rng, &orig_vec, temp_img.clone().into_vec());
         if temp_dist1 > temp_dist2 {
             new_img = temp_img;
@@ -93,7 +87,7 @@ pub fn generate_image(
             }
         }
         if index%1000==0 {
-        dist = sums_chunked(&image_buffer_rgb, &new_img.to_rgb());
+        dist = measure_dist_chunks(&image_buffer_rgb, &new_img.to_rgb());
             println!("iteration: {}, dist: {}, time: {}.{}, emoji: {}",
                 index,
                 dist,
@@ -114,17 +108,15 @@ pub fn generate_image(
 mod tests {
     #[test]
     fn it_works() {
-        use image::{jpeg::JPEGEncoder, open};
+        use image::open;
         use std::path::Path;
         use std::time::Instant;
         let now = Instant::now();
 
         let img = open(Path::new("./assets/georgia.jpg")).unwrap();
-        let mut output = Vec::new();
-        JPEGEncoder::new(&mut output).encode_image(&img).unwrap();
         let path = Path::new("./g.png");
 
-        let new_img = crate::brutemoji::generate_image(&output, 30_000, false, path);
+        let new_img = crate::brutemoji::generate_image(&img, 30_000, false, path);
         println!("{}", now.elapsed().as_secs());
         match new_img {
             Ok(_) => println!("OK"),
