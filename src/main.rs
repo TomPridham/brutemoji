@@ -15,7 +15,7 @@ fn main() {
         let new_path = String::from(format!("./output/{}_emoji.png", &name));
         let path = Path::new(&new_path);
 
-        let new_img = brutemoji::generate_image(&img, config.iterations, false, path);
+        let new_img = brutemoji::generate_image(&img, config.iterations, true, path);
         println!("Took {}.{} seconds",
             now.elapsed().as_secs(),
             now.elapsed().subsec_millis());

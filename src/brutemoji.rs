@@ -7,31 +7,19 @@ use std::time::Instant;
 
 mod emoji;
 
-fn measure_dist(rng: &mut ThreadRng, samples_a: &Vec<u8>, samples_b: Vec<u8>) -> i64 {
-    //let mut rng = thread_rng();
-    let sample_length = samples_a.len();
-    let v1 = (1..sample_length).choose_multiple(rng, sample_length/10);
-    let v1_iter = v1.iter();
-    let mut diff = 0;
-    for val in v1_iter {
-        diff = diff + (samples_a[*val] as i64 - samples_b[*val] as i64).abs();
-    }
 
-    return diff;
-}
-
-fn measure_dist_chunks(samples_a: &[u8], samples_b: &[u8]) -> i32 {
+fn measure_dist_chunks(samples_a: &[u8], samples_b: &[u8]) -> i64 {
     samples_a
         .chunks_exact(1)
         .zip(samples_b.chunks_exact(1))
         .fold(0, |rgba, (p_a, p_b)| {
-                rgba + (p_a[0] as i32 - p_b[0] as i32).abs()
+                rgba + (p_a[0] as i64 - p_b[0] as i64).abs()
         })
 }
 
-fn subimage_compare(image_a: &DynamicImage, image_b: &DynamicImage, x: u32, y: u32 ) -> i32 {
-    let sub_image_a = image_a.crop_imm(x-8,y-8,32,32).to_rgb();
-    let sub_image_b = image_b.crop_imm(x-8,y-8,32,32).to_rgb();
+fn subimage_compare(image_a: &DynamicImage, image_b: &DynamicImage, x: u32, y: u32 ) -> i64 {
+    let sub_image_a = image_a.crop_imm(x,y,16,16).to_rgb();
+    let sub_image_b = image_b.crop_imm(x,y,16,16).to_rgb();
     measure_dist_chunks(&sub_image_a, &sub_image_b)
 }
 
@@ -45,15 +33,12 @@ pub fn generate_image(
 
     let mut emoji_cache = emoji::EmojiCache::new();
 
-    // let orig = load_from_memory(image_buffer.clone())?.into_rgba();
     let image_buffer_rgb = image_buffer.clone().to_rgb();
     let (width, height) = image_buffer_rgb.dimensions();
-    // let orig_vec = orig.into_vec();
     let canvas_size = width * height;
     let mut rng = thread_rng();
     let mut new_img = DynamicImage::new_rgb16(width, height);
     println!("image is {} by {} pixels", width, height);
-    // let mut dist = measure_dist(&mut rng, &orig_vec,  new_img.clone().into_vec());
     let mut dist = measure_dist_chunks(&image_buffer_rgb, &new_img.to_rgb());
     println!("dist is {}", dist);
 
@@ -67,7 +52,6 @@ pub fn generate_image(
     }
 
     dist = measure_dist_chunks(&image_buffer_rgb, &new_img.to_rgb());
-    // ist = measure_dist(&mut rng, &orig_vec, new_img.clone().into_vec());
     println!("dist is {}", dist);
     
     for index in 0..iterations {
@@ -78,16 +62,12 @@ pub fn generate_image(
         let temp_dist1 = subimage_compare(&image_buffer, &temp_img, x, y);
         overlay(&mut temp_img, e, x, y);
         let temp_dist2 = subimage_compare(&image_buffer, &temp_img, x, y);
-        // let temp_dist = measure_dist(&mut rng, &orig_vec, temp_img.clone().into_vec());
         if temp_dist1 > temp_dist2 {
             new_img = temp_img;
             placed_count= placed_count+1;
-            if save_progress {
-                new_img.save(path)?;
-            }
         }
         if index%1000==0 {
-        dist = measure_dist_chunks(&image_buffer_rgb, &new_img.to_rgb());
+            dist = measure_dist_chunks(&image_buffer_rgb, &new_img.to_rgb());
             println!("iteration: {}, dist: {}, time: {}.{}, emoji: {}",
                 index,
                 dist,
@@ -95,6 +75,9 @@ pub fn generate_image(
                 now.elapsed().subsec_millis(),
                 placed_count
                 )
+        }
+        if index%10000==0 && save_progress {
+            new_img.save(path)?;
         }
     }
     println!("placed {} emoji", placed_count);

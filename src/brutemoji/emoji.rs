@@ -1,6 +1,6 @@
 use image::{load_from_memory_with_format, DynamicImage, ImageFormat};
-use rand::random;
 use std::collections::HashMap;
+use rand::random;
 
 const EMOJIS_LEN: usize = EMOJIS.len();
 
@@ -19,6 +19,7 @@ impl EmojiCache {
         let index = random::<usize>() % EMOJIS_LEN;
         self.get_emoji_by_index(index)
     }
+
     pub fn get_emoji_by_index(&mut self, index: usize) -> &DynamicImage {
         self.emoji_cache.entry(index).or_insert_with(|| {
             let e = unsafe { EMOJIS.get_unchecked(index) };
