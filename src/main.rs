@@ -9,8 +9,10 @@ fn main() {
         let now = Instant::now();
         let args: Vec<String> = env::args().collect();
         let config = Config::new(&args);
-        let img = open(Path::new(&config.filename)).unwrap();
-        let new_path = String::from(format!("./output/{}.png", "1"));
+        let orig_path = format!("./assets/{}", config.filename);
+        let img = open(Path::new(&orig_path)).unwrap();
+        let name = config.filename.split(".").collect::<Vec<&str>>()[1];
+        let new_path = String::from(format!("./output/{}_emoji.png", &name));
         let path = Path::new(&new_path);
 
         let new_img = brutemoji::generate_image(&img, config.iterations, false, path);
@@ -30,15 +32,12 @@ struct Config {
 
 impl Config {
     fn new(args: &[String]) -> Config {
-        let iterations : u64;
-        let filename : String;
-        if args.len() < 2 {
+        let iterations;
+        let mut filename = String::from("georgia.jpg");
+        if args.len() == 1 {
             iterations = 10_000;
-            filename = String::from("./assets/georgia.jpg");
-        } else if args.len() < 3 {
-            iterations = 10_000;
-            filename = String::from("./assets/georgia.jpg");
-            return Config {filename, iterations }
+        } else if args.len() == 2 {
+            iterations = args[1].clone().parse::<u64>().unwrap();
         } else {
         iterations = args[1].clone().parse::<u64>().unwrap();
         filename = args[2].clone();
