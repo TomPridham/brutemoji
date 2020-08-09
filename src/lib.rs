@@ -1,16 +1,15 @@
 use image::{imageops::overlay, ImageError, DynamicImage};
 use std::path::Path;
 use rand::prelude::*;
-use std::time::Instant;
 
 mod emoji;
 
 
 fn measure_dist_chunks(samples_a: &[u8], samples_b: &[u8]) -> i64 {
-    samples_a
+    samples_a.iter()
         .zip(samples_b.iter())
         .fold(0, |rgba, (p_a, p_b)| {
-                rgba + (p_a[0] as i64 - p_b[0] as i64).abs()
+                rgba + (*p_a as i64 - *p_b as i64).abs()
         })
 }
 
@@ -26,7 +25,6 @@ pub fn generate_image(
     save_progress: bool,
     path: &Path,
 ) -> Result<Vec<u8>, ImageError> {
-    let now = Instant::now();
 
     let mut emoji_cache = emoji::EmojiCache::new();
 
@@ -35,19 +33,14 @@ pub fn generate_image(
     let canvas_size = width * height;
     let mut rng = thread_rng();
     let mut new_img = DynamicImage::new_rgb16(width, height);
-    let mut dist = measure_dist_chunks(&image_buffer_rgb, &new_img.to_rgb());
 
-    let mut placed_count = 0;
     for _  in 0..canvas_size/20 {
         let e = emoji_cache.get_emoji();
         let x: u32 = (0..width).choose(&mut rng).unwrap();
         let y: u32 = (0..height).choose(&mut rng).unwrap();
         overlay(&mut new_img, e, x, y);
-        placed_count= placed_count+1;
     }
 
-    dist = measure_dist_chunks(&image_buffer_rgb, &new_img.to_rgb());
-    
     for index in 0..iterations {
         let e = emoji_cache.get_emoji();
         let x: u32 = (0..width).choose(&mut rng).unwrap();
@@ -58,23 +51,11 @@ pub fn generate_image(
         let temp_dist2 = subimage_compare(&image_buffer, &temp_img, x, y);
         if temp_dist1 > temp_dist2 {
             new_img = temp_img;
-            placed_count= placed_count+1;
-        }
-        if index%1000==0 {
-            dist = measure_dist_chunks(&image_buffer_rgb, &new_img.to_rgb());
-            println!("iteration: {}, dist: {}, time: {}.{}, emoji: {}",
-                index,
-                dist,
-                now.elapsed().as_secs(),
-                now.elapsed().subsec_millis(),
-                placed_count
-                )
         }
         if index%10000==0 && save_progress {
             new_img.save(path)?;
         }
     }
-    println!("placed {} emoji", placed_count);
     new_img.save(path)?;
 
     Ok(new_img.to_rgb().to_vec())
