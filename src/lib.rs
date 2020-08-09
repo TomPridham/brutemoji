@@ -43,8 +43,8 @@ pub fn generate_image(
     let mut placed_count = 0;
     for _  in 0..canvas_size/20 {
         let e = emoji_cache.get_emoji();
-        let x: u32 = (1..width).choose(&mut rng).unwrap();
-        let y: u32 = (1..height).choose(&mut rng).unwrap();
+        let x: u32 = (0..width).choose(&mut rng).unwrap();
+        let y: u32 = (0..height).choose(&mut rng).unwrap();
         overlay(&mut new_img, e, x, y);
         placed_count= placed_count+1;
     }
@@ -54,8 +54,8 @@ pub fn generate_image(
     
     for index in 0..iterations {
         let e = emoji_cache.get_emoji();
-        let x: u32 = (1..width).choose(&mut rng).unwrap();
-        let y: u32 = (1..height).choose(&mut rng).unwrap();
+        let x: u32 = (0..width).choose(&mut rng).unwrap();
+        let y: u32 = (0..height).choose(&mut rng).unwrap();
         let mut temp_img = new_img.clone();
         let temp_dist1 = subimage_compare(&image_buffer, &temp_img, x, y);
         overlay(&mut temp_img, e, x, y);
