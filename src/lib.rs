@@ -97,7 +97,7 @@ mod tests {
         let img = open(Path::new("./assets/georgia.jpg")).unwrap();
         let path = Path::new("./g.png");
 
-        let new_img = crate::brutemoji::generate_image(&img, 30_000, false, path);
+        let new_img = crate::generate_image(&img, 30_000, false, path);
         println!("{}", now.elapsed().as_secs());
         match new_img {
             Ok(_) => println!("OK"),
