@@ -47,7 +47,6 @@ pub fn generate_image(
     }
 
     dist = measure_dist_chunks(&image_buffer_rgb, &new_img.to_rgb());
-    println!("dist is {}", dist);
     
     for index in 0..iterations {
         let e = emoji_cache.get_emoji();
