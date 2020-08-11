@@ -1,7 +1,32 @@
-use image::{imageops::FilterType, load_from_memory_with_format, DynamicImage, ImageFormat};
-use rand::random;
+use image::{load_from_memory_with_format, DynamicImage, ImageFormat};
 use std::collections::HashMap;
-use std::path::Path;
+use rand::random;
+
+const EMOJIS_LEN: usize = EMOJIS.len();
+
+pub struct EmojiCache {
+    emoji_cache: HashMap<usize, DynamicImage>,
+}
+
+impl EmojiCache {
+    pub fn new() -> EmojiCache {
+        EmojiCache {
+            emoji_cache: HashMap::new(),
+        }
+    }
+
+    pub fn get_emoji(&mut self) -> &DynamicImage {
+        let index = random::<usize>() % EMOJIS_LEN;
+        self.get_emoji_by_index(index)
+    }
+
+    fn get_emoji_by_index(&mut self, index: usize) -> &DynamicImage {
+        self.emoji_cache.entry(index).or_insert_with(|| {
+            let e = unsafe { EMOJIS.get_unchecked(index) };
+            load_from_memory_with_format(e, ImageFormat::Png).unwrap()
+        })
+    }
+}
 
 const EMOJIS: [&[u8]; 3360] = [
     include_bytes!("../assets/emoji_pngs_16/1f004.png"),
@@ -3365,25 +3390,3 @@ const EMOJIS: [&[u8]; 3360] = [
     include_bytes!("../assets/emoji_pngs_16/ae.png"),
     include_bytes!("../assets/emoji_pngs_16/e50a.png"),
 ];
-
-const EMOJIS_LEN: usize = EMOJIS.len();
-
-pub struct EmojiCache {
-    emoji_cache: HashMap<usize, DynamicImage>,
-}
-
-impl EmojiCache {
-    pub fn new() -> EmojiCache {
-        EmojiCache {
-            emoji_cache: HashMap::new(),
-        }
-    }
-
-    pub fn get_emoji(&mut self) -> &DynamicImage {
-        let index = random::<usize>() % EMOJIS_LEN;
-        self.emoji_cache.entry(index).or_insert_with(|| {
-            let e = unsafe { EMOJIS.get_unchecked(index) };
-            load_from_memory_with_format(e, ImageFormat::Png).unwrap()
-        })
-    }
-}

@@ -1,70 +1,80 @@
-use image::{imageops::overlay, load_from_memory, ImageError, RgbaImage};
-use rand::random;
+use image::{imageops::overlay, ImageError, DynamicImage};
 use std::path::Path;
+use rand::prelude::*;
 
 mod emoji;
 
-fn sums_chunked(samples_a: &[u8], samples_b: &[u8]) -> (i32, i32, i32) {
-    samples_a
-        .chunks_exact(3)
-        .zip(samples_b.chunks_exact(3))
-        .fold((0, 0, 0), |(r, g, b), (p_a, p_b)| {
-            (
-                r + (p_a[0] as i32 - p_b[0] as i32).abs(),
-                g + (p_a[1] as i32 - p_b[1] as i32).abs(),
-                b + (p_a[2] as i32 - p_b[2] as i32).abs(),
-            )
+
+fn measure_dist_chunks(samples_a: &[u8], samples_b: &[u8]) -> i64 {
+    samples_a.iter()
+        .zip(samples_b.iter())
+        .fold(0, |rgba, (p_a, p_b)| {
+                rgba + (*p_a as i64 - *p_b as i64).abs()
         })
 }
 
+fn subimage_compare(image_a: &DynamicImage, image_b: &DynamicImage, x: u32, y: u32 ) -> i64 {
+    let sub_image_a = image_a.crop_imm(x,y,16,16).to_rgb();
+    let sub_image_b = image_b.crop_imm(x,y,16,16).to_rgb();
+    measure_dist_chunks(&sub_image_a, &sub_image_b)
+}
+
 pub fn generate_image(
-    image_buffer: &[u8],
+    image_buffer: &DynamicImage,
     iterations: u64,
     save_progress: bool,
     path: &Path,
 ) -> Result<Vec<u8>, ImageError> {
-    let mut emoji_cache = emoji::EmojiCache::new();
-    let orig = load_from_memory(image_buffer)?.into_rgba();
-    let (width, height) = orig.dimensions();
-    let mut new_img = RgbaImage::new(width, height);
-    let mut dist = sums_chunked(&orig, &new_img);
 
-    for _ in 0..iterations {
+    let mut emoji_cache = emoji::EmojiCache::new();
+
+    let image_buffer_rgb = image_buffer.clone().to_rgb();
+    let (width, height) = image_buffer_rgb.dimensions();
+    let canvas_size = width * height;
+    let mut rng = thread_rng();
+    let mut new_img = DynamicImage::new_rgb16(width, height);
+
+    for _  in 0..canvas_size/20 {
         let e = emoji_cache.get_emoji();
-        let x: u32 = random::<u32>() % width;
-        let y: u32 = random::<u32>() % height;
+        let x: u32 = (0..width).choose(&mut rng).unwrap();
+        let y: u32 = (0..height).choose(&mut rng).unwrap();
+        overlay(&mut new_img, e, x, y);
+    }
+
+    for index in 0..iterations {
+        let e = emoji_cache.get_emoji();
+        let x: u32 = (0..width).choose(&mut rng).unwrap();
+        let y: u32 = (0..height).choose(&mut rng).unwrap();
         let mut temp_img = new_img.clone();
+        let temp_dist1 = subimage_compare(&image_buffer, &temp_img, x, y);
         overlay(&mut temp_img, e, x, y);
-        let temp_dist = sums_chunked(&orig, &temp_img);
-        if dist > temp_dist {
+        let temp_dist2 = subimage_compare(&image_buffer, &temp_img, x, y);
+        if temp_dist1 > temp_dist2 {
             new_img = temp_img;
-            dist = temp_dist;
-            if save_progress {
-                new_img.save(path)?;
-            }
+        }
+        if index%10000==0 && save_progress {
+            new_img.save(path)?;
         }
     }
     new_img.save(path)?;
 
-    Ok(new_img.to_vec())
+    Ok(new_img.to_rgb().to_vec())
 }
 
 #[cfg(test)]
+
 mod tests {
     #[test]
     fn it_works() {
-        use crate::generate_image;
-        use image::{jpeg::JPEGEncoder, open};
+        use image::open;
         use std::path::Path;
         use std::time::Instant;
         let now = Instant::now();
 
         let img = open(Path::new("./assets/georgia.jpg")).unwrap();
-        let mut output = Vec::new();
-        JPEGEncoder::new(&mut output).encode_image(&img).unwrap();
         let path = Path::new("./g.png");
 
-        let new_img = generate_image(&output, 30_000, false, path);
+        let new_img = crate::generate_image(&img, 30_000, false, path);
         println!("{}", now.elapsed().as_secs());
         match new_img {
             Ok(_) => println!("OK"),
