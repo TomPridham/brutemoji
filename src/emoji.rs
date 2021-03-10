@@ -1,6 +1,5 @@
 use image::{imageops::FilterType, load_from_memory_with_format, DynamicImage, ImageFormat};
 use std::collections::HashMap;
-use rand::random;
 
 const EMOJIS_LEN: usize = EMOJIS.len();
 
@@ -15,8 +14,8 @@ impl EmojiCache {
         }
     }
 
-    pub fn get_emoji(&mut self) -> &DynamicImage {
-        let index = random::<usize>() % EMOJIS_LEN;
+    pub fn get_emoji(&mut self, rng: &fastrand::Rng) -> &DynamicImage {
+        let index = rng.usize(0..EMOJIS_LEN);
         self.get_emoji_by_index(index)
     }
 

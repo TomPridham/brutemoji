@@ -1,5 +1,4 @@
 use image::{imageops::replace, DynamicImage, GenericImageView, ImageError};
-use rand::prelude::*;
 use std::path::Path;
 
 mod emoji;
@@ -30,20 +29,20 @@ pub fn generate_image(
     let (width, height) = image_buffer.dimensions();
     let (width, height) = (std::cmp::min(width, 1000), std::cmp::min(height, 1000));
     let canvas_size = width * height;
-    let mut rng = thread_rng();
+    let rng = fastrand::Rng::new();
     let mut new_img = DynamicImage::new_rgba16(width, height);
 
     for _ in 0..canvas_size / 20 {
-        let e = emoji_cache.get_emoji();
-        let x: u32 = (0..width).choose(&mut rng).unwrap();
-        let y: u32 = (0..height).choose(&mut rng).unwrap();
+        let e = emoji_cache.get_emoji(&rng);
+        let x = rng.u32(0..width);
+        let y = rng.u32(0..height);
         replace(&mut new_img, e, x, y);
     }
 
     for index in 0..iterations {
-        let e = emoji_cache.get_emoji();
-        let x: u32 = (0..width).choose(&mut rng).unwrap();
-        let y: u32 = (0..height).choose(&mut rng).unwrap();
+        let e = emoji_cache.get_emoji(&rng);
+        let x = rng.u32(0..width);
+        let y = rng.u32(0..height);
         let mut temp_img = new_img.clone();
         let temp_dist1 = subimage_compare(&image_buffer, &temp_img, x, y);
         replace(&mut temp_img, e, x, y);

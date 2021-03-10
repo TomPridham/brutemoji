@@ -10,8 +10,8 @@ keywords = ["emoji", "picture", "image", "bruteforce", "idiotic"]
 license = "MIT"
 
 [dependencies]
+fastrand = "1.4.0"
 image = { version = "0.23.14", default-features = false, features = ["gif", "jpeg", "png", "webp"] }
-rand = "0.8.3"
 
 [dev-dependencies]
 criterion = "0.3"
