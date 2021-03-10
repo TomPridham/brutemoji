@@ -28,6 +28,7 @@ pub fn generate_image(
     let mut emoji_cache = emoji::EmojiCache::new();
 
     let (width, height) = image_buffer.dimensions();
+    let (width, height) = (std::cmp::min(width, 1000), std::cmp::min(height, 1000));
     let canvas_size = width * height;
     let mut rng = thread_rng();
     let mut new_img = DynamicImage::new_rgba16(width, height);
@@ -50,7 +51,7 @@ pub fn generate_image(
         if temp_dist1 > temp_dist2 {
             new_img = temp_img;
         }
-        if index % 10000 == 0 && save_progress {
+        if index % 1000 == 0 && save_progress {
             new_img.save(path)?;
         }
     }
@@ -62,6 +63,14 @@ pub fn generate_image(
 #[cfg(test)]
 
 mod tests {
+
+    #[test]
+    fn dist_chunks_measures_correctly() {
+        let a = vec![0; 10];
+        let b = vec![u8::MAX; 10];
+        assert_eq!(crate::measure_dist_chunks(&a, &b), u8::MAX as i64 * 10);
+    }
+
     #[test]
     fn it_works() {
         use image::open;
@@ -72,7 +81,7 @@ mod tests {
         let img = open(Path::new("./assets/georgia.jpg")).unwrap();
         let path = Path::new("./g.png");
 
-        let new_img = crate::generate_image(&img, 30_000, false, path);
+        let new_img = crate::generate_image(&img, 30, true, path);
         println!("{}", now.elapsed().as_secs());
         match new_img {
             Ok(_) => println!("OK"),
