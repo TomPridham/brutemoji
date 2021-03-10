@@ -1,4 +1,4 @@
-use image::{imageops::overlay, DynamicImage, ImageError};
+use image::{imageops::replace, DynamicImage, GenericImageView, ImageError};
 use rand::prelude::*;
 use std::path::Path;
 
@@ -27,17 +27,16 @@ pub fn generate_image(
 ) -> Result<Vec<u8>, ImageError> {
     let mut emoji_cache = emoji::EmojiCache::new();
 
-    let image_buffer_rgb = image_buffer.clone().to_rgb8();
-    let (width, height) = image_buffer_rgb.dimensions();
+    let (width, height) = image_buffer.dimensions();
     let canvas_size = width * height;
     let mut rng = thread_rng();
-    let mut new_img = DynamicImage::new_rgb16(width, height);
+    let mut new_img = DynamicImage::new_rgba16(width, height);
 
     for _ in 0..canvas_size / 20 {
         let e = emoji_cache.get_emoji();
         let x: u32 = (0..width).choose(&mut rng).unwrap();
         let y: u32 = (0..height).choose(&mut rng).unwrap();
-        overlay(&mut new_img, e, x, y);
+        replace(&mut new_img, e, x, y);
     }
 
     for index in 0..iterations {
@@ -46,7 +45,7 @@ pub fn generate_image(
         let y: u32 = (0..height).choose(&mut rng).unwrap();
         let mut temp_img = new_img.clone();
         let temp_dist1 = subimage_compare(&image_buffer, &temp_img, x, y);
-        overlay(&mut temp_img, e, x, y);
+        replace(&mut temp_img, e, x, y);
         let temp_dist2 = subimage_compare(&image_buffer, &temp_img, x, y);
         if temp_dist1 > temp_dist2 {
             new_img = temp_img;
