@@ -1,4 +1,4 @@
-use image::{imageops::replace, DynamicImage, GenericImageView, ImageError};
+use image::{imageops::overlay, DynamicImage, GenericImageView, ImageError};
 use std::path::Path;
 
 mod emoji;
@@ -36,7 +36,7 @@ pub fn generate_image(
         let e = emoji_cache.get_emoji(&rng);
         let x = rng.u32(0..width);
         let y = rng.u32(0..height);
-        replace(&mut new_img, e, x, y);
+        overlay(&mut new_img, e, x, y);
     }
 
     for index in 0..iterations {
@@ -45,7 +45,7 @@ pub fn generate_image(
         let y = rng.u32(0..height);
         let mut temp_img = new_img.clone();
         let temp_dist1 = subimage_compare(&image_buffer, &temp_img, x, y);
-        replace(&mut temp_img, e, x, y);
+        overlay(&mut temp_img, e, x, y);
         let temp_dist2 = subimage_compare(&image_buffer, &temp_img, x, y);
         if temp_dist1 > temp_dist2 {
             new_img = temp_img;
