@@ -1,4 +1,7 @@
-use image::{imageops::overlay, DynamicImage, GenericImageView, ImageError};
+use image::{
+    imageops::{overlay, FilterType},
+    DynamicImage, GenericImageView, ImageError,
+};
 use std::path::Path;
 
 mod emoji;
@@ -27,7 +30,17 @@ pub fn generate_image(
     let mut emoji_cache = emoji::EmojiCache::new();
 
     let (width, height) = image_buffer.dimensions();
-    let (width, height) = (std::cmp::min(width, 1000), std::cmp::min(height, 1000));
+    let (width, height) = (width as f32, height as f32);
+    let width_ratio = 1000.0 / width;
+    let height_ratio = 1000.0 / height;
+    let ratio = if width_ratio < height_ratio {
+        width_ratio
+    } else {
+        height_ratio
+    };
+    let (width, height) = ((width * ratio), (height * ratio));
+    let (width, height): (u32, u32) = (width.floor() as u32, height.floor() as u32);
+    let image_buffer = image_buffer.resize_exact(width, height, FilterType::Lanczos3);
     let canvas_size = width * height;
     let rng = fastrand::Rng::new();
     let mut new_img = DynamicImage::new_rgba16(width, height);
