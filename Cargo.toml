@@ -1,4 +1,3 @@
-
 [package]
 name = "brutemoji"
 version = "0.6.0"
@@ -11,5 +10,12 @@ keywords = ["emoji", "picture", "image", "bruteforce", "idiotic"]
 license = "MIT"
 
 [dependencies]
-image = {version="0.23.8", default-features = false, features = ["gif", "jpeg", "png", "webp"]}
-rand = "0.7.3"
+fastrand = "1.4.0"
+image = { version = "0.23.14", default-features = false, features = ["gif", "jpeg", "png", "webp"] }
+
+[dev-dependencies]
+criterion = "0.3"
+
+[[bench]]
+name = "image_generation"
+harness = false
