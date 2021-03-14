@@ -1,6 +1,6 @@
 [package]
 name = "brutemoji"
-version = "0.6.0"
+version = "0.7.0"
 authors = ["Tom Pridham <pridham.tom@gmail.com>"]
 edition = "2018"
 description = "Recreate pictures with emoji by bruteforce"
